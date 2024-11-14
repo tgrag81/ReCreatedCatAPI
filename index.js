@@ -22,9 +22,32 @@ const API_KEY = "live_pI12pDxc9rdGPQLOhxgP9Q83jyoV2sO264KEOLNYU1CCOjXrzgJbGLwHYd
  * This function should execute immediately.
  */
 
-async function initialLoad(params) {
-    
-}
+async function initialLoad() {
+    try { const response = await axios.get('/breeds');
+      const breeds = response.data;
+
+breeds.forEach(breed => {
+  const option =document.createElement('option');
+  option.value = breed.id;
+  option.textContent = breed.name;
+  breedSelect.appendChild(option);
+  });
+
+console.log(initialLoad);
+
+await handleBreedSelect();
+    }
+
+    catch (error) {
+      console.error('Error loading initial breeds:', error);
+    }
+
+
+
+
+
+    }
+
 
 
 
@@ -42,27 +65,63 @@ async function initialLoad(params) {
  *  - Feel free to edit index.html and styles.css to suit your needs, but be careful!
  *  - Remember that functionality comes first, but user experience and design are important.
  * - Each new selection should clear, re-populate, and restart the Carousel.
- * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
- */
+ * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.**/
 
-/**
- * 3. Fork your own sandbox, creating a new one named "JavaScript Axios Lab."
- */
-/**
- * 4. Change all of your fetch() functions to axios!
- * - axios has already been imported for you within index.js.
- * - If you've done everything correctly up to this point, this should be simple.
- * - If it is not simple, take a moment to re-evaluate your original code.
- * - Hint: Axios has the ability to set default headers. Use this to your advantage
- *   by setting a default header with your API key so that you do not have to
- *   send it manually with all of your requests! You can also set a default base URL!
- */
-/**
- * 5. Add axios interceptors to log the time between request and response to the console.
- * - Hint: you already have access to code that does this!
- * - Add a console.log statement to indicate when requests begin.
- * - As an added challenge, try to do this on your own without referencing the lesson material.
- */
+
+breedSelect.addEventListener('change', handleBreedSelect);
+
+async function handleBreedSelect() {
+  const breedId= breedSelect.value;
+
+try {
+  const response = await axios.get('/images/search?breed_id=${breedId}&limit=5');
+Carousel.innerHTML = '';
+infoDump.innerHTML = '';
+
+images.forEach(img => {
+  const imgElement = document.createElement('img');
+  imgElement.src = img.url;
+  imgElement.classList.add('carousel-item');
+  Carousel.appendChild(imgElement);
+});
+
+if (images.length > 0 && images[0].breeds.length > 0) {
+  const breedInfo = images[0].breeds[0];
+  const infoSection = document.createElement('div');
+  infoSection.innerHTML = `
+      <h2>${breedInfo.name}</h2>
+      <p>${breedInfo.description}</p>
+      <p><strong>Origin:</strong> ${breedInfo.origin}</p>
+      <p><strong>Life Span:</strong> ${breedInfo.life_span} years</p>
+      <p><strong>Temperament:</strong> ${breedInfo.temperament}</p>
+  `;
+  infoDump.appendChild(infoSection);
+}
+} catch (error) {
+console.error('Error fetching breed info:', error);
+}
+};
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * 6. Next, we'll create a progress bar to indicate the request is in progress.
@@ -78,15 +137,41 @@ async function initialLoad(params) {
  * - Note that we are not downloading a lot of data, so onDownloadProgress will likely only fire
  *   once or twice per request to this API. This is still a concept worth familiarizing yourself
  *   with for future projects.
- */
+ **/
+
+axios.interceptors.request.use(config => {
+  console.log('Request Began');
+  document.body.style.width = '0%';
+progressBar.style.width = '0%';
+  return config;
+
+},
+error => Promise.reject(error));
+
+
+axios.interceptors.response.use(response => {
+  document.body.style.cursor = 'default';
+  return response;
+},
+error => Promise.reject(error));
+
 
 /**
  * 7. As a final element of progress indication, add the following to your axios interceptors:
  * - In your request interceptor, set the body element's cursor style to "progress."
  * - In your response interceptor, remove the progress cursor style from the body element.
- */
+ **/
+axios.interceptors.request.use(config => {
+  document.body.style.cursor = 'progress';
+  return config;
+})
+axios.interceptors.response.use(response => {
+  document.body.style.cursor = 'default';
+  return response;
+})
+
 /**
- * 8. To practice posting data, we'll create a system to "favourite" certain images.
+ * 8. To practice posting data, we'll create a system to "favourite" (BRITISH ENGLISH!!!)certain images.
  * - The skeleton of this function has already been created for you.
  * - This function is used within Carousel.js to add the event listener as items are created.
  *  - This is why we use the export keyword for this function.
@@ -97,9 +182,23 @@ async function initialLoad(params) {
  * - You can call this function by clicking on the heart at the top right of any image.
  */
 export async function favourite(imgId) {
-  // your code here
-}
+  // your code here from Sandbox
 
+  //if error check imgId should match as parameter//
+
+try {
+  const {data: favourite } = await axios.get('/favourites');
+  const favouriteItem= favourite.find(fav => fav.imgage_id === imgId)
+
+  if (favouriteItem) {
+    await axios.delete('/favourites/${favoriteItem.id}')
+  } else {
+    await axios.post('/favourites', {imgId: imgId})
+  }
+} catch (error) {
+  console.error('Error toggling favorite:', error)
+}
+}
 /**
  * 9. Test your favourite() function by creating a getFavourites() function.
  * - Use Axios to get all of your favourites from the cat API.
@@ -109,7 +208,9 @@ export async function favourite(imgId) {
  *    If that isn't in its own function, maybe it should be so you don't have to
  *    repeat yourself in this section.
  */
+async function getFavourites () {
 
+}
 /**
  * 10. Test your site, thoroughly!
  * - What happens when you try to load the Malayan breed?
